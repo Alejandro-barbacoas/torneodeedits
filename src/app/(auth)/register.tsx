@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
@@ -9,15 +9,19 @@ import { useAuth } from './../../lib/modules/auth/AuthProvider';
 import { getPushToken } from './../../lib/core/notifications/usePushNotifications';
 import { Button } from './../../components/ui/Button';
 import { Input } from './../../components/ui/Input';
+import { Toast } from './../../components/notifications/Toast';
 
 const schema = z.object({
-  email: z.string().min(1, "El correo es requerido").email("Correo invalido"),
-  password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres"),
+  email: z.string().min(1, "Requerido").email("Correo invalido"),
+  password: z.string().min(6, "Minimo 6 caracteres"),
 });
 
 type FormData = z.infer<typeof schema>;
 
 export default function RegisterScreen() {
+  const [showToast, setShowToast] = useState(false);
+  const [loading, setLoading] = useState(false);
+  
   const router = useRouter();
   const { login } = useAuth();
 
@@ -27,20 +31,36 @@ export default function RegisterScreen() {
   });
 
   const onRegister = async (data: FormData) => {
-    const token = await getPushToken();
+    setLoading(true);
     
-    login({ 
-      email: data.email, 
-      pushToken: token 
-    });
+    try {
+      const token = await getPushToken();
+      
+      login({ 
+        email: data.email, 
+        pushToken: token 
+      });
 
-    router.replace('./(tabs)/feed');
+      setShowToast(true);
+
+      setTimeout(() => {
+        setShowToast(false);
+        router.replace('./(tabs)/feed');
+      }, 2000);
+
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <View style={styles.container}>
+      <Toast message="¡Cuenta creada! Entrando al torneo..." visible={showToast} />
+      
       <Text style={styles.title}>Torneo de Edits</Text>
-      <Text style={styles.subtitle}>Crea tu cuenta para empezar</Text>
+      <Text style={styles.subtitle}>Crea tu cuenta para participar</Text>
 
       <Controller
         control={control}
@@ -53,7 +73,6 @@ export default function RegisterScreen() {
             value={value}
             error={errors.email?.message}
             autoCapitalize="none"
-            keyboardType="email-address"
           />
         )}
       />
@@ -76,6 +95,7 @@ export default function RegisterScreen() {
       <Button 
         title="Registrarse e Ingresar" 
         onPress={handleSubmit(onRegister)} 
+        loading={loading}
       />
     </View>
   );
