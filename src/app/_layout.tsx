@@ -1,25 +1,29 @@
-import { Stack } from 'expo-router';
-import { AuthProvider } from '../lib/modules/auth/AuthProvider';
-import * as Notifications from 'expo-notifications';
+import { AuthProvider, useAuth } from "../lib/modules/auth/AuthProvider";
+import { usePushNotifications } from "../lib/core/notifications/usePushNotifications";
+import { Stack } from "expo-router";
 
-Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldShowAlert: true,
-      shouldPlaySound: true,
-      shouldSetBadge: false,
-      shouldShowBanner: true,
-      shouldShowList: true,
-    }),
-  });
+function AuthLayout() {
+  const { user } = useAuth(); // Usamos 'user' que es como lo definimos en tu AuthProvider
+  
+  // Extraemos el ID del usuario (de Supabase)
+  const userId = user?.id; 
+
+  // 🚀 Magia: Si hay ID, se registra el token automáticamente
+  usePushNotifications(userId);
+
+  return (
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="entry" />
+      <Stack.Screen name="(auth)" />
+      <Stack.Screen name="(tabs)" />
+    </Stack>
+  );
+}
 
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="entry" />
-        <Stack.Screen name="(auth)" />
-        <Stack.Screen name="(tabs)" />
-      </Stack>
+      <AuthLayout />
     </AuthProvider>
   );
 }
