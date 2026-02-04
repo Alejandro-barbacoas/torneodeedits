@@ -2,28 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
-import { getPushToken } from './../../lib/core/notifications/usePushNotifications';
 import { Button } from './../../components/ui/Button';
 import { useAuth } from './../../lib/modules/auth/AuthProvider';
 
 export default function ProfileScreen() {
-  const [token, setToken] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  
+  const [token, setToken] = useState<string | null>("Gestionado automáticamente");  const [loading, setLoading] = useState(false);  
   const { logout, user } = useAuth();
   const router = useRouter();
-
-  useEffect(() => {
-    fetchToken();
-  }, []);
-
-  const fetchToken = async () => {
-    setLoading(true);
-    const expoToken = await getPushToken();
-    if (expoToken) setToken(expoToken);
-    setLoading(false);
-  };
-
   const handleLogout = () => {
     logout();
     router.replace('./(auth)/login');

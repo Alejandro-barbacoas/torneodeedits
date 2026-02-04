@@ -3,50 +3,39 @@ import { Platform } from 'react-native';
 import { supabase } from '../../core/supabase/client.supabase';
 import { NotificationAdapter } from '../../core/notifications/notification.adapter';
 
-// 1. Setup Inicial Fuera del componente
-// Esto configura los listeners una sola vez al cargar el archivo
+// 1. Setup Inicial: Configura los handlers de qué hacer cuando llega una notificación
 NotificationAdapter.setup();
 
 export const usePushNotifications = (userId?: string) => {
-  // 2. Efecto Principal
-  // Se ejecuta cuando el 'userId' cambia (login/logout)
   useEffect(() => {
-    
-    // A. Cláusula de Guardia 🛡️
-    // Si no hay usuario logueado, no hacemos nada.
+    // Si no hay usuario (ej. no ha iniciado sesión), no pedimos token
     if (!userId) return;
 
     const register = async () => {
-      // B. Llamada al Adaptador 🔌
-      // Todo el trabajo sucio de permisos ocurre aquí dentro
+      // Pedimos permiso y obtenemos el token
       const token = await NotificationAdapter.registerForPushNotificationsAsync();
       
       if (token) {
         console.log('Token obtenido:', token);
-        // C. Persistencia 💾
-        // Si tenemos token, lo guardamos en la nube
+        // Guardamos o actualizamos en Supabase
         await saveTokenToDatabase(token, userId);
       }
     };
 
     register();
     
-  }, [userId]); // <--- Array de dependencias: se re-ejecuta si userId cambia
+  }, [userId]); // Se dispara cada vez que el ID del usuario cambia
 };
 
-// 3. Función Auxiliar de Supabase ⚡
 async function saveTokenToDatabase(token: string, userId: string) {
-  // Usamos 'upsert' (Insert or Update)
-  // Si el token ya existe, actualiza el timestamp. Si no, lo crea.
   const { error } = await supabase
-    .from('devices')
+    .from('devices') 
     .upsert({ 
       user_id: userId,
       token: token,
-      platform: Platform.OS, // 'ios' o 'android'
-      last_used_at: new Date().toISOString() // Importante para saber dispositivos activos
+      platform: Platform.OS,
+      last_used_at: new Date().toISOString()
     }, { onConflict: 'token' }); 
-    // ^ 'onConflict': Si el token ya existe en la DB, no dupliques, fusiona.
 
   if (error) {
     console.error('Error guardando device:', error);

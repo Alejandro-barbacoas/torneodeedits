@@ -7,7 +7,6 @@ import { z } from 'zod';
 import { authService } from './../../lib/modules/auth/auth.service';
 
 import { useAuth } from './../../lib/modules/auth/AuthProvider';
-import { getPushToken } from './../../lib/core/notifications/usePushNotifications';
 import { Button } from './../../components/ui/Button';
 import { Input } from './../../components/ui/Input';
 import { Toast } from './../../components/notifications/Toast';
@@ -34,16 +33,18 @@ export default function RegisterScreen() {
   const onRegister = async (data: FormData) => {
     setLoading(true);
     try {
-      await authService.signUp(data.email, data.password);
-      const token = await getPushToken();
-      login({ email: data.email, pushToken: token });
+      const result = await authService.signUp(data.email, data.password);
+      if (result.user) {
+        login(result.user); 
+      }
       setShowToast(true);
       setTimeout(() => {
         setShowToast(false);
         router.replace('./(tabs)/feed');
       }, 2000);
+
     } catch (error: any) {
-      alert("Error al registrar: " + error.message);
+      alert("Error: " + error.message);
     } finally {
       setLoading(false);
     }
