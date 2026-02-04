@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { authService } from './../../lib/modules/auth/auth.service';
 
 import { useAuth } from './../../lib/modules/auth/AuthProvider';
 import { getPushToken } from './../../lib/core/notifications/usePushNotifications';
@@ -32,24 +33,17 @@ export default function RegisterScreen() {
 
   const onRegister = async (data: FormData) => {
     setLoading(true);
-    
     try {
+      await authService.signUp(data.email, data.password);
       const token = await getPushToken();
-      
-      login({ 
-        email: data.email, 
-        pushToken: token 
-      });
-
+      login({ email: data.email, pushToken: token });
       setShowToast(true);
-
       setTimeout(() => {
         setShowToast(false);
         router.replace('./(tabs)/feed');
       }, 2000);
-
-    } catch (error) {
-      console.error(error);
+    } catch (error: any) {
+      alert("Error al registrar: " + error.message);
     } finally {
       setLoading(false);
     }
