@@ -1,12 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Alert } from 'react-native';
+import { useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import { getPushToken } from './../../lib/core/notifications/usePushNotifications';
 import { Button } from './../../components/ui/Button';
+import { useAuth } from './../../lib/modules/auth/AuthProvider';
 
 export default function ProfileScreen() {
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  
+  const { logout, user } = useAuth();
+  const router = useRouter();
 
   useEffect(() => {
     fetchToken();
@@ -15,10 +20,13 @@ export default function ProfileScreen() {
   const fetchToken = async () => {
     setLoading(true);
     const expoToken = await getPushToken();
-    if (expoToken) {
-      setToken(expoToken);
-    }
+    if (expoToken) setToken(expoToken);
     setLoading(false);
+  };
+
+  const handleLogout = () => {
+    logout();
+    router.replace('./(auth)/login');
   };
 
   const copyToClipboard = async () => {
@@ -30,18 +38,16 @@ export default function ProfileScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Configuracion de Perfil</Text>
+      <Text style={styles.title}>Mi Perfil</Text>
       
       <View style={styles.card}>
-        <Text style={styles.label}>Estado de Notificaciones</Text>
-        <Text style={styles.status}>
-          {token ? "Activas" : "No configuradas"}
-        </Text>
+        <Text style={styles.label}>Usuario:</Text>
+        <Text style={styles.userData}>{user?.email || 'No identificado'}</Text>
         
         <Text style={styles.label}>Tu Push Token:</Text>
         <View style={styles.tokenContainer}>
           <Text style={styles.tokenText} numberOfLines={2}>
-            {token || "No disponible"}
+            {token || "Cargando token..."}
           </Text>
         </View>
 
@@ -50,11 +56,12 @@ export default function ProfileScreen() {
           onPress={copyToClipboard} 
           disabled={!token}
         />
-        
+      </View>
+
+      <View style={styles.footer}>
         <Button 
-          title="Actualizar Token" 
-          onPress={fetchToken} 
-          loading={loading}
+          title="Cerrar Sesión" 
+          onPress={handleLogout} 
         />
       </View>
     </View>
@@ -66,14 +73,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
     padding: 20,
-    justifyContent: 'center',
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 30,
+    marginTop: 60,
+    marginBottom: 20,
     textAlign: 'center',
-    color: '#1a1a1a',
   },
   card: {
     backgroundColor: '#f9f9f9',
@@ -85,24 +91,26 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     color: '#666',
-    marginTop: 15,
-    marginBottom: 5,
+    marginTop: 10,
   },
-  status: {
-    fontSize: 18,
+  userData: {
+    fontSize: 16,
     fontWeight: '600',
-    color: '#4CAF50',
+    color: '#1a1a1a',
     marginBottom: 10,
   },
   tokenContainer: {
     backgroundColor: '#eee',
     padding: 10,
     borderRadius: 8,
-    marginBottom: 20,
+    marginVertical: 10,
   },
   tokenText: {
     fontSize: 12,
     color: '#444',
-    fontFamily: 'System',
   },
+  footer: {
+    marginTop: 'auto',
+    marginBottom: 20,
+  }
 });
