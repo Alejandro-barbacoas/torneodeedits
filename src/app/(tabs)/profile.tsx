@@ -1,37 +1,61 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Clipboard, Alert } from 'react-native';
+import { View, Text, StyleSheet, Alert } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { getPushToken } from './../../lib/core/notifications/usePushNotifications';
+import { Button } from './../../components/ui/Button';
 
 export default function ProfileScreen() {
   const [token, setToken] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    async function loadToken() {
-      const expoToken = await getPushToken();
-      if (expoToken) setToken(expoToken);
-    }
-    loadToken();
+    fetchToken();
   }, []);
 
-  const copyToClipboard = () => {
+  const fetchToken = async () => {
+    setLoading(true);
+    const expoToken = await getPushToken();
+    if (expoToken) {
+      setToken(expoToken);
+    }
+    setLoading(false);
+  };
+
+  const copyToClipboard = async () => {
     if (token) {
-      Clipboard.setString(token);
-      Alert.alert("Copiado", "El token se ha copiado al portapapeles");
+      await Clipboard.setStringAsync(token);
+      Alert.alert("Copiado", "Token copiado al portapapeles");
     }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Mi Perfil</Text>
-      <View style={styles.infoBox}>
-        <Text style={styles.label}>Tu Expo Push Token:</Text>
-        <Text style={styles.tokenText}>{token ? token : "Cargando..."}</Text>
+      <Text style={styles.title}>Configuracion de Perfil</Text>
+      
+      <View style={styles.card}>
+        <Text style={styles.label}>Estado de Notificaciones</Text>
+        <Text style={styles.status}>
+          {token ? "Activas" : "No configuradas"}
+        </Text>
         
-        {token && (
-          <TouchableOpacity style={styles.copyButton} onPress={copyToClipboard}>
-            <Text style={styles.copyButtonText}>Copiar Token</Text>
-          </TouchableOpacity>
-        )}
+        <Text style={styles.label}>Tu Push Token:</Text>
+        <View style={styles.tokenContainer}>
+          <Text style={styles.tokenText} numberOfLines={2}>
+            {token || "No disponible"}
+          </Text>
+        </View>
+
+        <Button 
+          title="Copiar Token" 
+          onPress={copyToClipboard} 
+          disabled={!token}
+        />
+        
+        <Button 
+          title="Actualizar Token" 
+          onPress={fetchToken} 
+          loading={loading}
+        />
       </View>
     </View>
   );
@@ -40,40 +64,45 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
     backgroundColor: '#fff',
-    justifyContent: 'center'
+    padding: 20,
+    justifyContent: 'center',
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 20,
-    textAlign: 'center'
+    marginBottom: 30,
+    textAlign: 'center',
+    color: '#1a1a1a',
   },
-  infoBox: {
-    padding: 15,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 10
+  card: {
+    backgroundColor: '#f9f9f9',
+    padding: 20,
+    borderRadius: 15,
+    borderWidth: 1,
+    borderColor: '#eee',
   },
   label: {
     fontSize: 14,
     color: '#666',
-    marginBottom: 5
+    marginTop: 15,
+    marginBottom: 5,
+  },
+  status: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#4CAF50',
+    marginBottom: 10,
+  },
+  tokenContainer: {
+    backgroundColor: '#eee',
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 20,
   },
   tokenText: {
     fontSize: 12,
-    color: '#333',
-    fontWeight: 'mono'
+    color: '#444',
+    fontFamily: 'System',
   },
-  copyButton: {
-    marginTop: 15,
-    backgroundColor: '#007AFF',
-    padding: 10,
-    borderRadius: 5,
-    alignItems: 'center'
-  },
-  copyButtonText: {
-    color: '#fff',
-    fontWeight: 'bold'
-  }
 });
