@@ -4,16 +4,16 @@ import { useRouter } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { authService } from './../../lib/modules/auth/auth.service';
 
+import { authService } from '../../lib/modules/auth/auth.service';
 import { useAuth } from './../../lib/modules/auth/AuthProvider';
 import { Button } from './../../components/ui/Button';
 import { Input } from './../../components/ui/Input';
 import { Toast } from './../../components/notifications/Toast';
 
 const schema = z.object({
-  email: z.string().min(1, "Requerido").email("Correo invalido"),
-  password: z.string().min(6, "Minimo 6 caracteres"),
+  email: z.string().min(1, "Requerido").email("Correo inválido"),
+  password: z.string().min(6, "Mínimo 6 caracteres"),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -34,17 +34,19 @@ export default function RegisterScreen() {
     setLoading(true);
     try {
       const result = await authService.signUp(data.email, data.password);
-      if (result.user) {
-        login(result.user); 
-      }
-      setShowToast(true);
-      setTimeout(() => {
-        setShowToast(false);
-        router.replace('./(tabs)/feed');
-      }, 2000);
+      
+      if (result) {
+        login(result);
+        
+        setShowToast(true);
 
+        setTimeout(() => {
+          setShowToast(false);
+          router.replace('./(tabs)/feed');
+        }, 2000);
+      }
     } catch (error: any) {
-      alert("Error: " + error.message);
+      alert("Error en el registro: " + error.message);
     } finally {
       setLoading(false);
     }
@@ -52,7 +54,7 @@ export default function RegisterScreen() {
 
   return (
     <View style={styles.container}>
-      <Toast message="¡Cuenta creada! Entrando al torneo..." visible={showToast} />
+      <Toast message="¡Cuenta creada con éxito!" visible={showToast} />
       
       <Text style={styles.title}>Torneo de Edits</Text>
       <Text style={styles.subtitle}>Crea tu cuenta para participar</Text>
@@ -62,8 +64,8 @@ export default function RegisterScreen() {
         name="email"
         render={({ field: { onChange, value } }) => (
           <Input
-            label="Correo Electronico"
-            placeholder="correo@ejemplo.com"
+            label="Correo Electrónico"
+            placeholder="editor@ejemplo.com"
             onChangeText={onChange}
             value={value}
             error={errors.email?.message}
@@ -107,7 +109,6 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: 'bold',
     textAlign: 'center',
-    color: '#1a1a1a',
   },
   subtitle: {
     fontSize: 16,

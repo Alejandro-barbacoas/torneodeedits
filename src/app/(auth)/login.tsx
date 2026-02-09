@@ -5,6 +5,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 
+import { authService } from '../../lib/modules/auth/auth.service';
 import { useAuth } from './../../lib/modules/auth/AuthProvider';
 import { Button } from './../../components/ui/Button';
 import { Input } from './../../components/ui/Input';
@@ -29,20 +30,25 @@ export default function LoginScreen() {
     defaultValues: { email: '', password: '' }
   });
 
+  // --- FUNCIÓN DE LOGIN CORREGIDA ---
   const onLogin = async (data: FormData) => {
     setLoading(true);
-    
     try {
-      // Aqui luego conectaremos con Supabase
-      login({ email: data.email });
-      setShowToast(true);
+      // 1. Llamada real a Supabase
+      const result = await authService.signIn(data.email, data.password);
+      
+      if (result) {
+        // 2. Guardamos sesión (Esto activa las notificaciones en el Layout)
+        login(result);
+        setShowToast(true);
 
-      setTimeout(() => {
-        setShowToast(false);
-        router.replace('./(tabs)/feed');
-      }, 1500);
-    } catch (error) {
-      console.error(error);
+        setTimeout(() => {
+          setShowToast(false);
+          router.replace('./(tabs)/feed');
+        }, 1500);
+      }
+    } catch (error: any) {
+      alert("Error al iniciar sesión: " + error.message);
     } finally {
       setLoading(false);
     }
@@ -50,7 +56,7 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.container}>
-      <Toast message="Sesion iniciada" visible={showToast} />
+      <Toast message="Sesión iniciada" visible={showToast} />
       
       <Text style={styles.title}>Bienvenido</Text>
       <Text style={styles.subtitle}>Ingresa a tu cuenta de Editor</Text>
@@ -60,7 +66,7 @@ export default function LoginScreen() {
         name="email"
         render={({ field: { onChange, value } }) => (
           <Input
-            label="Correo Electronico"
+            label="Correo Electrónico"
             placeholder="correo@ejemplo.com"
             onChangeText={onChange}
             value={value}
@@ -86,14 +92,14 @@ export default function LoginScreen() {
       />
 
       <Button 
-        title="Iniciar Sesion" 
+        title="Iniciar Sesión" 
         onPress={handleSubmit(onLogin)} 
         loading={loading}
       />
 
       <Link href="./(auth)/register" asChild>
         <TouchableOpacity style={styles.link}>
-          <Text style={styles.linkText}>¿No tienes cuenta? Registrate</Text>
+          <Text style={styles.linkText}>¿No tienes cuenta? Regístrate</Text>
         </TouchableOpacity>
       </Link>
     </View>
